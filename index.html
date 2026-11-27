@@ -1,16 +1,369 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome</title>
-  <style>
-    body { font-family: system-ui; max-width: 800px; margin: 4rem auto; padding: 0 2rem; }
-    h1 { color: #0969da; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+
+<title>SRI Guard</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SRI Guard">
+<meta name="application-name" content="SRI Guard">
+
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#f2f2f7"/>
+  <path d="M32 8 L52 18 v12 c0 14 -9 26 -20 28 C21 56 12 44 12 30 V18 Z" fill="#007aff"/>
+  <path d="M22 32 L30 40 L46 24" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>'>
+
+<link rel="apple-touch-icon" href='data:image/svg+xml;utf8,
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <rect width="180" height="180" rx="40" fill="#f2f2f7"/>
+  <path d="M90 25 L145 50 v40 c0 35 -22 65 -55 70 C55 140 35 110 35 90 V50 Z" fill="#007aff"/>
+  <path d="M60 90 L80 110 L135 65" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>'>
+
+<style>
+  :root {
+    --bg: #f2f2f7;
+    --card: #ffffff;
+    --primary: #007aff;
+    --primary-hover: #0062cc;
+    --fix: #5856d6;
+    --ok: #34c759;
+    --fail: #ff3b30;
+    --text: #1c1c1e;
+    --text2: #636366;
+    --border: #e5e5ea;
+    --radius: 14px;
+    --toggle-on: #34c759;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(242,242,247,0.85);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px; text-align: center;
+  }
+  header h1 { margin: 0; font-size: 17px; font-weight: 600; }
+  header p.subtitle { margin: 4px 0 0; font-size: 12px; color: var(--text2); }
+
+  .content { padding: 16px; max-width: 600px; margin: 0 auto 40px; }
+
+  .section {
+    background: var(--card); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .section-title { font-size: 13px; text-transform: uppercase; color: var(--text2); margin-bottom: 12px; letter-spacing: 0.02em; }
+
+  input[type="url"] { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: #f9f9f9; outline: none; }
+  input[type="url"]:focus { border-color: var(--primary); background: #fff; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 14px; }
+
+  .toggle {
+    position: relative; width: 50px; height: 30px; background: #e5e5ea;
+    border-radius: 15px; cursor: pointer; transition: background 0.2s;
+  }
+  .toggle.active { background: var(--toggle-on); }
+  .toggle::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 26px; height: 26px;
+    background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: transform 0.2s;
+  }
+  .toggle.active::after { transform: translateX(20px); }
+
+  input[type="file"] { display: none; }
+  .file-label {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 600; color: #fff; background: var(--text2);
+    cursor: pointer; margin-top: 12px; transition: opacity 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .file-label:active { opacity: 0.7; }
+  .file-label .file-icon { font-size: 18px; }
+  .file-name { font-size: 12px; color: var(--text2); text-align: center; margin-top: 6px; word-break: break-all; }
+
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; color: #fff; background: var(--primary); cursor: pointer; margin-top: 12px; transition: opacity 0.2s; }
+  .btn:active { opacity: 0.7; }
+  .btn.fix { background: var(--fix); }
+
+  .progress-wrap { display: none; margin: 16px 0; }
+  .progress-bar-bg { height: 6px; background: #e5e5ea; border-radius: 3px; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+  .progress-text { font-size: 12px; color: var(--text2); margin-top: 6px; text-align: center; }
+
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .resource-type { font-size: 12px; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.02em; }
+  .url { font-size: 13px; word-break: break-all; color: var(--primary); margin-bottom: 6px; }
+  .hash-label { font-size: 12px; color: var(--text2); word-break: break-all; overflow-wrap: break-word; }
+  .hash-label code { word-break: break-all; }
+  .tag-snippet { background: #f9f9f9; border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin: 8px 0; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; white-space: pre-wrap; color: var(--text2); }
+  .status { font-size: 14px; font-weight: 600; margin-top: 8px; }
+  .status.ok { color: var(--ok); }
+  .status.fail { color: var(--fail); }
+</style>
 </head>
+
 <body>
-  <h1>🚀 Site is live</h1>
-  <p>Push changes to this branch and GitHub Pages updates automatically.</p>
+<header>
+  <h1>🔍 SRI Guard</h1>
+  <p class="subtitle">Subresource Integrity Checker & Auto‑Fix</p>
+</header>
+
+<div class="content">
+  <div class="section">
+    <div class="section-title">Remote HTML</div>
+    <input type="url" id="htmlUrl" placeholder="https://math-examples.github.io/test/">
+    <div class="toggle-row">
+      <span>Auto‑add trailing slash for directory URLs</span>
+      <div class="toggle active" id="normalizeToggle" onclick="toggleNormalize()"></div>
+    </div>
+    <button class="btn" onclick="loadRemote()">Check Remote</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Or from device</div>
+    <label class="file-label" for="fileInput">
+      <span class="file-icon">📁</span>
+      <span>Choose HTML File</span>
+    </label>
+    <input type="file" id="fileInput" accept=".html,.htm">
+    <div class="file-name" id="fileName"></div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-text" id="progressText">Checking…</div>
+  </div>
+
+  <ul id="results"></ul>
+</div>
+
+<script>
+let originalHTML = "";
+let fixMap = new Map();
+
+function toggleNormalize() {
+  document.getElementById("normalizeToggle").classList.toggle("active");
+}
+
+async function sha384(buffer) {
+  const hash = await crypto.subtle.digest("SHA-384", buffer);
+  return "sha384-" + btoa(String.fromCharCode(...new Uint8Array(hash)));
+}
+
+function normalizeUrl(raw) {
+  const t = document.getElementById("normalizeToggle");
+  if (!t || !t.classList.contains("active")) return raw.trim();
+
+  let u;
+  try { u = new URL(raw.trim()); } catch { throw new Error("Invalid URL"); }
+  if (u.protocol !== "http:" && u.protocol !== "https:") return u.href;
+
+  const lastSeg = u.pathname.split("/").pop();
+  if (lastSeg && !lastSeg.includes(".")) {
+    u.pathname = u.pathname + "/";
+  }
+  return u.href;
+}
+
+function extractFallbacks(onerrorAttr) {
+  if (!onerrorAttr) return [];
+  const urls = [];
+  const re = /(https?:\/\/[^'"\s]+)/g;
+  let m;
+  while ((m = re.exec(onerrorAttr)) !== null) urls.push(m[1]);
+  return urls;
+}
+
+async function checkOneUrl(url, expected, label) {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return { ok: false, error: "HTTP " + res.status, label };
+    const buf = await res.arrayBuffer();
+    const actual = await sha384(buf);
+    return { ok: actual === expected, actual, label };
+  } catch (e) {
+    return { ok: false, error: e.message || "network", label };
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function parseHTML(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return [
+    ...doc.querySelectorAll('link[rel="stylesheet"][href][integrity]'),
+    ...doc.querySelectorAll('script[src][integrity]')
+  ];
+}
+
+function renderItem(url, expected, result, snippet, key) {
+  const li = document.createElement("li");
+
+  li.innerHTML = `
+    <div class="resource-type">${result.label}</div>
+    <div class="url">${url}</div>
+    <div class="hash-label">expected: <code>${expected}</code></div>
+    <div class="tag-snippet">${escapeHtml(snippet)}</div>
+  `;
+
+  if (result.ok) {
+    li.innerHTML += `<div class="status ok">✅ SRI OK</div>`;
+  } else if (result.actual) {
+    li.innerHTML += `
+      <div class="status fail">❌ Mismatch</div>
+      <div class="hash-label">actual: <code>${result.actual}</code></div>
+    `;
+    if (key && !fixMap.has(key)) fixMap.set(key, result.actual);
+  } else {
+    li.innerHTML += `<div class="status fail">❌ Failed (${result.error})</div>`;
+  }
+
+  document.getElementById("results").appendChild(li);
+}
+
+function resetProgress() {
+  const wrap = document.getElementById("progressWrap");
+  wrap.style.display = "none";
+  document.getElementById("progressBar").style.width = "0%";
+  document.getElementById("progressText").textContent = "Checking…";
+}
+
+async function processTags(tags, htmlText) {
+  originalHTML = htmlText;
+  fixMap.clear();
+  document.getElementById("results").innerHTML = "";
+  resetProgress();
+
+  const wrap = document.getElementById("progressWrap");
+  const bar = document.getElementById("progressBar");
+  const text = document.getElementById("progressText");
+  wrap.style.display = "block";
+
+  const total = tags.length;
+  let done = 0;
+
+  for (const tag of tags) {
+    const isLink = tag.tagName.toLowerCase() === "link";
+    const url = isLink ? tag.href : tag.src;
+    const expected = tag.getAttribute("integrity");
+    const snippet = tag.outerHTML;
+    const key = isLink ? `link[href="${url}"]` : `script[src="${url}"]`;
+    const label = isLink ? "Stylesheet" : "Script";
+
+    text.textContent = `Checking ${done + 1} of ${total}…`;
+
+    const result = await checkOneUrl(url, expected, label);
+    renderItem(url, expected, result, snippet, key);
+
+    const fallbacks = extractFallbacks(tag.getAttribute("onerror"));
+    for (const fb of fallbacks) {
+      const fbResult = await checkOneUrl(fb, expected, label + " (fallback)");
+      renderItem(fb, expected, fbResult, snippet, null);
+    }
+
+    done++;
+    bar.style.width = ((done / total) * 100) + "%";
+  }
+
+  text.textContent = "Done";
+  if (fixMap.size > 0) showFixButton();
+}
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function applyFixes() {
+  let out = originalHTML;
+  for (const [key, correctHash] of fixMap.entries()) {
+    const m = key.match(/^(link|script)\[(href|src)="(.+)"\]$/);
+    if (!m) continue;
+    const attr = m[2];
+    const url = m[3];
+    const re = new RegExp(
+      `(<(?:link|script)[^>]*${attr}=["'][^"']*${escapeRegExp(url)}[^"']*["'][^>]*integrity=["'])([^"']*)(["'][^>]*>)`,
+      "i"
+    );
+    out = out.replace(re, `$1${correctHash}$3`);
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([out], {type:"text/html"}));
+  a.download = "fixed.html";
+  a.click();
+}
+
+function showFixButton() {
+  removeFixButton();
+  const btn = document.createElement("button");
+  btn.className = "btn fix";
+  btn.textContent = `🔧 Auto‑Fix ${fixMap.size} Hash${fixMap.size>1?"es":""} & Download`;
+  btn.onclick = applyFixes;
+  document.querySelector(".content").appendChild(btn);
+}
+
+function removeFixButton() {
+  document.querySelectorAll(".btn.fix").forEach(b => b.remove());
+}
+
+async function loadRemote() {
+  const raw = document.getElementById("htmlUrl").value.trim();
+  if (!raw) return alert("Enter a URL");
+
+  document.getElementById("results").innerHTML = "";
+  removeFixButton();
+  resetProgress();
+
+  try {
+    const url = normalizeUrl(raw);
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const html = await res.text();
+    const tags = parseHTML(html);
+    if (!tags.length) return alert("No integrity resources found");
+    await processTags(tags, html);
+  } catch (e) {
+    alert("Failed to load HTML: " + e.message);
+  }
+}
+
+document.getElementById("fileInput").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  document.getElementById("results").innerHTML = "";
+  removeFixButton();
+  resetProgress();
+
+  // Show filename
+  document.getElementById("fileName").textContent = file.name;
+
+  const html = await file.text();
+  const tags = parseHTML(html);
+  if (!tags.length) {
+    alert("No integrity resources found");
+    e.target.value = "";
+    return;
+  }
+  await processTags(tags, html);
+  e.target.value = "";
+});
+</script>
 </body>
 </html>
